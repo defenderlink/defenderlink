@@ -1,0 +1,84 @@
+
+<style>
+.defenderlink-result {
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    color: #fff;
+    display: none;
+}
+.result-safe { background-color: #28a745; }
+.result-warning { background-color: #ffc107; color: #000; }
+.result-danger { background-color: #dc3545; }
+.result-icon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+.result-title {
+    font-weight: bold;
+    font-size: 18px;
+}
+.result-desc {
+    margin-top: 5px;
+    font-size: 14px;
+}
+</style>
+
+<script>
+let defenderlinkLastCheck = 0;
+
+async function defenderlinkCheckUrl(inputId, outputId) {
+    const now = Date.now();
+    if (now - defenderlinkLastCheck < 5000) {
+        alert("Подождите несколько секунд перед повторной проверкой.");
+        return;
+    }
+    defenderlinkLastCheck = now;
+
+    const url = document.getElementById(inputId).value.trim();
+    const output = document.getElementById(outputId);
+    output.style.display = "block";
+    output.className = "defenderlink-result result-warning";
+    output.innerHTML = "<div class='result-title'>Проверка...</div>";
+
+    try {
+        const res = await fetch('/api/check-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        
+        let riskLevel = "safe";
+        let icon = "✅";
+        let title = "Ссылка безопасна";
+        let desc = "Мы не обнаружили признаков фишинга.";
+        
+        if (data.score > 30 && data.score <= 70) {
+            riskLevel = "warning";
+            icon = "⚠️";
+            title = "Возможный риск";
+            desc = "Ссылка выглядит подозрительно. Будьте осторожны.";
+        } else if (data.score > 70) {
+            riskLevel = "danger";
+            icon = "⛔";
+            title = "Опасная ссылка!";
+            desc = "Ссылка определена как потенциально фишинговая.";
+        }
+
+        output.className = "defenderlink-result result-" + riskLevel;
+        output.innerHTML = "<span class='result-icon'>" + icon + "</span>" +
+                           "<span class='result-title'>" + title + "</span>" +
+                           "<div class='result-desc'>" + desc + "</div>" +
+                           "<div class='result-desc'><b>Оценка риска:</b> " + data.score.toFixed(1) + "%</div>" +
+                           "<div class='result-desc'><b>Проверено сервисами:</b> Google Safe Browsing, VirusTotal, OpenPhish</div>";
+
+    } catch (err) {
+        output.className = "defenderlink-result result-danger";
+        output.innerHTML = "<span class='result-icon'>❌</span>" +
+                           "<span class='result-title'>Ошибка проверки</span>" +
+                           "<div class='result-desc'>" + err.message + "</div>";
+    }
+}
+</script>

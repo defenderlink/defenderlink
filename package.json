@@ -1,0 +1,14 @@
+{
+  "name": "defenderlink",
+  "version": "1.0.0",
+  "description": "DefenderLink - проверка ссылок и файлов на фишинг",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "whois-json": "^2.0.2"
+  }
+}
