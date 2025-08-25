@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 node_modules
 .netlify
 .env
 .DS_Store
+=======
+# Local Netlify folder
+.netlify
+.env
+>>>>>>> 5fd1a73e7c785353bb4c6313239887405cef94c3

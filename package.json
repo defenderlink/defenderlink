@@ -1,6 +1,7 @@
 {
   "name": "defenderlink",
   "version": "1.0.0",
+<<<<<<< HEAD
   "description": "Phishing and malware detection service",
   "scripts": {
     "build": "echo 'No build step needed'",
@@ -23,3 +24,16 @@
   "author": "DefenderLink Team",
   "license": "MIT"
 }
+=======
+  "description": "DefenderLink - проверка ссылок и файлов на фишинг",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "whois-json": "^2.0.2"
+  }
+}
+>>>>>>> 5fd1a73e7c785353bb4c6313239887405cef94c3

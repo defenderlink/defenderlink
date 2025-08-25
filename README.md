@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DefenderLink — Полный MVP
 
 Сервис проверки ссылок и файлов на фишинг/вредоносное ПО (Google Safe Browsing, VirusTotal, PhishTank, OpenPhish).
@@ -105,3 +106,18 @@ git push -u origin main
 - **VirusTotal no report**: подождите 5–10 секунд и повторите; проверьте ссылку `permalink` в ответе.
 
 Удачного релиза! 🚀
+=======
+# DefenderLink — Netlify Functions Backend
+
+## Env vars (Netlify → Site settings → Environment)
+- `VIRUSTOTAL_API_KEY` (required)
+- `GOOGLE_SAFE_BROWSING_KEY` (recommended)
+
+## Endpoints
+- POST `/api/check-url` → `{ "url": "https://example.com" }`
+- POST `/api/check-file` → raw bytes with `Content-Type: application/octet-stream`
+
+## Notes
+- OpenPhish/PhishTank used as public feeds; may be rate-limited.
+- DNS/HEAD heuristics included; WHOIS only for report.
+>>>>>>> 5fd1a73e7c785353bb4c6313239887405cef94c3
