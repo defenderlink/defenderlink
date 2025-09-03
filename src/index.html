@@ -180,6 +180,11 @@
             color: #856404;
         }
         
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
         .result-details {
             margin-top: 0.5rem;
             font-size: 0.9rem;
@@ -203,7 +208,7 @@
         
         @keyframes spin {
             0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+           100% { transform: rotate(360deg); }
         }
         
         .services-info {
@@ -277,7 +282,7 @@
                 Проверка URL
             </h2>
             <div class="input-group">
-                <input type="url" id="urlInput" placeholder="Введите URL для проверки" required>
+                <input type="url" id="urlInput" placeholder="Введите URL для проверки (например, https://example.com)" required>
                 <button id="checkUrlBtn">Проверить</button>
             </div>
         </div>
@@ -306,7 +311,9 @@
             <p>Проверяем данные. Это может занять несколько секунд...</p>
         </div>
         
-        <div class="results" id="resultsContainer"></div>
+        <div class="results" id="resultsContainer">
+            <!-- Результаты проверки будут отображаться здесь -->
+        </div>
         
         <div class="services-info">
             <div class="service-item">
@@ -355,11 +362,295 @@
     
     <footer>
         <div class="container">
-            <p>DefenderLink &copy; 2025 | Защитите себя от фишинга и вредоносных программ</p>
+            <p>DefenderLink &copy; 2023 | Защитите себя от фишинга и вредоносных программ</p>
             <p>defenderlink.app</p>
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlInput = document.getElementById('urlInput');
+            const checkUrlBtn = document.getElementById('checkUrlBtn');
+            const fileInput = document.getElementById('fileInput');
+            const fileDropArea = document.getElementById('fileDropArea');
+            const fileName = document.getElementById('fileName');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            // Обработчик для проверки URL
+            checkUrlBtn.addEventListener('click', function() {
+                const url = urlInput.value.trim();
+                if (url) {
+                    // Добавляем https:// если протокол не указан
+                    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+                    checkUrl(fullUrl);
+                } else {
+                    alert('Пожалуйста, введите URL для проверки');
+                }
+            });
+            
+            // Обработчики для drag and drop загрузки файлов
+            fileDropArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+            
+            fileDropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                fileDropArea.style.borderColor = '#4361ee';
+                fileDropArea.style.backgroundColor = '#f0f4ff';
+            });
+            
+            fileDropArea.addEventListener('dragleave', function() {
+                fileDropArea.style.borderColor = '#ddd';
+                fileDropArea.style.backgroundColor = 'transparent';
+            });
+            
+            fileDropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                fileDropArea.style.borderColor = '#ddd';
+                fileDropArea.style.backgroundColor = 'transparent';
+                
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            function handleFile(file) {
+                fileName.textContent = `Выбран файл: ${file.name}`;
+                checkFile(file);
+            }
+            
+            function checkUrl(url) {
+                showLoading();
+                clearResults();
+                
+                // Вызываем Netlify Function для проверки URL
+                fetch('/.netlify/functions/check-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ошибка сети при проверке URL');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    displayUrlResults(data);
+                })
+                .catch(error => {
+                    hideLoading();
+                    displayError('Ошибка при проверке URL: ' + error.message);
+                });
+            }
+            
+            function checkFile(file) {
+                showLoading();
+                clearResults();
+                
+                // Создаем FormData для отправки файла
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Вызываем Netlify Function для проверки файла
+                fetch('/.netlify/functions/check-file', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Ошибка сети при проверке файла');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    hideLoading();
+                    displayFileResults(data, file.name);
+                })
+                .catch(error => {
+                    hideLoading();
+                    displayError('Ошибка при проверке файла: ' + error.message);
+                });
+            }
+            
+            function displayUrlResults(data) {
+                // Очищаем предыдущие результаты
+                resultsContainer.innerHTML = '';
+                
+                // Проверяем, есть ли данные от всех сервисов
+                if (data.google && data.virusTotal && data.phishTank && data.openPhish) {
+                    // Отображаем результаты от всех сервисов
+                    const services = [
+                        { 
+                            name: 'Google Safe Browsing', 
+                            result: data.google,
+                            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`
+                        },
+                        { 
+                            name: 'VirusTotal', 
+                            result: data.virusTotal,
+                            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 0 1-6-6c0-1.5.5-2 2-2h8c1.5 0 2 .5 2 2a6 6 0 0 1-6 6z"></path></svg>`
+                        },
+                        { 
+                            name: 'PhishTank', 
+                            result: data.phishTank,
+                            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
+                        },
+                        { 
+                            name: 'OpenPhish', 
+                            result: data.openPhish,
+                            icon: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`
+                        }
+                    ];
+                    
+                    services.forEach(service => {
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'result-item';
+                        
+                        let status, statusText, details;
+                        
+                        if (service.result.error) {
+                            status = 'error';
+                            statusText = 'Ошибка';
+                            details = service.result.error;
+                        } else {
+                            status = service.result.safe ? 'safe' : 'unsafe';
+                            statusText = service.result.safe ? 'Безопасно' : 'Опасность';
+                            details = service.result.details;
+                        }
+                        
+                        resultItem.innerHTML = `
+                            <div class="result-title">
+                                <div class="result-service">
+                                    ${service.icon}
+                                    ${service.name}
+                                </div>
+                                <span class="result-status ${status}">
+                                    ${statusText}
+                                </span>
+                            </div>
+                            <div class="result-details">
+                                ${details}
+                            </div>
+                        `;
+                        
+                        resultsContainer.appendChild(resultItem);
+                    });
+                    
+                    // Добавляем общий вердикт
+                    const allSafe = services.every(service => 
+                        !service.result.error && service.result.safe
+                    );
+                    
+                    const anyUnsafe = services.some(service => 
+                        !service.result.error && !service.result.safe
+                    );
+                    
+                    const verdictItem = document.createElement('div');
+                    verdictItem.className = 'result-item';
+                    verdictItem.style.backgroundColor = allSafe ? '#d4edda' : anyUnsafe ? '#f8d7da' : '#fff3cd';
+                    
+                    let verdictText = allSafe 
+                        ? '✅ Все сервисы подтвердили безопасность URL' 
+                        : anyUnsafe 
+                            ? '❌ Обнаружены проблемы с безопасностью URL' 
+                            : '⚠️ Невозможно полностью проверить URL';
+                    
+                    verdictItem.innerHTML = `
+                        <div class="result-title">
+                            <div class="result-service">
+                                <strong>Общий вердикт</strong>
+                            </div>
+                        </div>
+                        <div class="result-details">
+                            ${verdictText}
+                        </div>
+                    `;
+                    
+                    resultsContainer.insertBefore(verdictItem, resultsContainer.firstChild);
+                    
+                } else {
+                    displayError('Неполные данные от сервера проверки');
+                }
+            }
+            
+            function displayFileResults(data, filename) {
+                // Очищаем предыдущие результаты
+                resultsContainer.innerHTML = '';
+                
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                let status, statusText, details;
+                
+                if (data.error) {
+                    status = 'error';
+                    statusText = 'Ошибка';
+                    details = data.error;
+                } else {
+                    status = data.safe ? 'safe' : 'unsafe';
+                    statusText = data.safe ? 'Безопасно' : 'Опасность';
+                    details = data.details || `Файл "${filename}" проверен.`;
+                    
+                    if (data.raw && data.raw.positives !== undefined) {
+                        details += ` ${data.raw.positives} из ${data.raw.total} антивирусных движков обнаружили угрозы.`;
+                    }
+                }
+                
+                resultItem.innerHTML = `
+                    <div class="result-title">
+                        <div class="result-service">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 0 1-6-极速赛车开奖结果历史
+                            VirusTotal
+                        </div>
+                        <span class="result-status ${status}">
+                            ${statusText}
+                        </span>
+                    </div>
+                    <div class="result-details">
+                        ${details}
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(resultItem);
+            }
+            
+            function displayError(message) {
+                resultsContainer.innerHTML = `
+                    <div class="result-item">
+                        <div class="result-title">
+                            <div class="result-service">Ошибка</div>
+                            <span class="result-status error">Ошибка</span>
+                        </div>
+                        <div class="result-details">
+                            ${message}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            function showLoading() {
+                loadingIndicator.style.display = 'block';
+            }
+            
+            function hideLoading() {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            function clearResults() {
+                resultsContainer.innerHTML = '';
+            }
+        });
+    </script>
 </body>
 </html>
