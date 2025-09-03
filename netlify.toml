@@ -1,5 +1,4 @@
 [build]
-<<<<<<< HEAD
   publish = "src"
   functions = "netlify/functions"
 
@@ -10,16 +9,6 @@
   for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type"
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
-=======
-  functions = "netlify/functions"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
->>>>>>> 5fd1a73e7c785353bb4c6313239887405cef94c3
